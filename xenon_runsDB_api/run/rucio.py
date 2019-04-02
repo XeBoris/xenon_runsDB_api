@@ -14,7 +14,6 @@ class RunRucio(Resource):
         self.mongodb = mongo.db[config["runsDB"]["database_name"]]
         self.views = {"data": 1}
         self.views.update(config["runsDB"]["views"]["limited_view"])
-
     def _get_(self, key, value, data_type=None):
         """
         
@@ -26,13 +25,15 @@ class RunRucio(Resource):
         app.logger.debug("Query results: %s", result)
         if data_type:
             limited_data = [do["location"] for do in result["data"] 
-                            if do["type"] == data_type]
+                            if (do["type"] == data_type and
+                                do["host"] == "rucio-catalogue" )]
             result["dids"] = {}
             result["dids"][data_type] = limited_data
         else:
             d = defaultdict(list)
             for do in result["data"]:
-                d[do["type"]].append(do["location"])
+		if do["host"] == "rucio-catalogue":
+		    d[do["type"]].append(do["location"])
             result["dids"] = d
         result.pop("data")
         app.logger.debug("Keys for result: %s" % result.keys())
